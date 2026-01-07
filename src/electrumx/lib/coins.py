@@ -1081,6 +1081,63 @@ class LitecoinRegtest(LitecoinTestnet):
     TX_COUNT_HEIGHT = 1
 
 
+class Doriancoin(Coin):
+    NAME = "Doriancoin"
+    SHORTNAME = "DSV"
+    NET = "mainnet"
+    XPUB_VERBYTES = bytes.fromhex("0488b21e")
+    XPRV_VERBYTES = bytes.fromhex("0488ade4")
+    P2PKH_VERBYTE = bytes.fromhex("1e")
+    P2SH_VERBYTES = (bytes.fromhex("05"), bytes.fromhex("1c"))
+    WIF_BYTE = bytes.fromhex("b0")
+    GENESIS_HASH = ('d21da25e277bd20b7456087d69c5fee2'
+                    'ebc6091b410271b5cb0623c7d1e7d1b9')
+    DESERIALIZER = lib_tx.DeserializerSegWit
+    TX_COUNT = 1608098
+    TX_COUNT_HEIGHT = 1243844
+    TX_PER_BLOCK = 2
+    RPC_PORT = 1948
+    REORG_LIMIT = 800
+    PEERS = []
+
+    @classmethod
+    def header_hash(cls, header):
+        '''Given a header return the scrypt hash.'''
+        from hashlib import scrypt
+        return scrypt(header, salt=header, n=1024, r=1, p=1, dklen=32)
+
+
+class DoriancoinTestnet(Doriancoin):
+    SHORTNAME = "tDSV"
+    NET = "testnet"
+    XPUB_VERBYTES = bytes.fromhex("043587cf")
+    XPRV_VERBYTES = bytes.fromhex("04358394")
+    P2PKH_VERBYTE = bytes.fromhex("1e")
+    P2SH_VERBYTES = (bytes.fromhex("16"), bytes.fromhex("3a"))
+    WIF_BYTE = bytes.fromhex("ef")
+    GENESIS_HASH = ('707769464eb59fdd7b75cdbc5f0e7222'
+                    '6345281852325c965b8ee1fd592fbf51')
+    TX_COUNT = 1
+    TX_COUNT_HEIGHT = 1
+    TX_PER_BLOCK = 1
+    RPC_PORT = 11948
+    REORG_LIMIT = 4000
+    PEER_DEFAULT_PORTS = {'t': '51001', 's': '51002'}
+    PEERS = []
+
+
+class DoriancoinRegtest(DoriancoinTestnet):
+    NET = "regtest"
+    P2PKH_VERBYTE = bytes.fromhex("6f")
+    P2SH_VERBYTES = (bytes.fromhex("c4"), bytes.fromhex("3a"))
+    GENESIS_HASH = ('707769464eb59fdd7b75cdbc5f0e7222'
+                    '6345281852325c965b8ee1fd592fbf51')
+    RPC_PORT = 19443
+    PEERS = []
+    TX_COUNT = 1
+    TX_COUNT_HEIGHT = 1
+
+
 class BitcoinCashRegtest(BitcoinTestnetMixin, Coin):
     NAME = "BitcoinCash"
     NET = "regtest"
