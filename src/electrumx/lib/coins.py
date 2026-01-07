@@ -1100,12 +1100,6 @@ class Doriancoin(Coin):
     REORG_LIMIT = 800
     PEERS = []
 
-    @classmethod
-    def header_hash(cls, header):
-        '''Given a header return the scrypt hash.'''
-        from hashlib import scrypt
-        return scrypt(header, salt=header, n=1024, r=1, p=1, dklen=32)
-
 
 class DoriancoinTestnet(Doriancoin):
     SHORTNAME = "tDSV"
