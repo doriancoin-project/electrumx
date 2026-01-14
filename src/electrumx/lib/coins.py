@@ -1092,7 +1092,7 @@ class Doriancoin(Coin):
     WIF_BYTE = bytes.fromhex("b0")
     GENESIS_HASH = ('d21da25e277bd20b7456087d69c5fee2'
                     'ebc6091b410271b5cb0623c7d1e7d1b9')
-    DESERIALIZER = lib_tx.DeserializerSegWit
+    DESERIALIZER = lib_tx.DeserializerLitecoin
     TX_COUNT = 1608098
     TX_COUNT_HEIGHT = 1243844
     TX_PER_BLOCK = 2
