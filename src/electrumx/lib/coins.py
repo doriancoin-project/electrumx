@@ -38,7 +38,7 @@ from hashlib import sha256
 from typing import Sequence, Tuple, Optional
 
 import electrumx.lib.util as util
-from electrumx.lib.hash import Base58, double_sha256, hash_to_hex_str
+from electrumx.lib.hash import Base58, Bech32, Bech32Error, double_sha256, hash_to_hex_str
 from electrumx.lib.hash import HASHX_LEN, hex_str_to_hash
 from electrumx.lib.script import (_match_ops, Script, ScriptError,
                                   ScriptPubKey, OpCodes)
@@ -88,6 +88,9 @@ class Coin:
     WIF_BYTE = bytes.fromhex("80")
     ENCODE_CHECK = Base58.encode_check
     DECODE_CHECK = Base58.decode_check
+    # Bech32/Bech32m HRP (Human Readable Part) for SegWit/Taproot addresses
+    # Set to None for coins that don't support bech32
+    BECH32_HRP = None
     GENESIS_HASH = ('000000000019d6689c085ae165831e93'
                     '4ff763ae46a2a6c172b3f1b60a8ce26f')
     GENESIS_ACTIVATION = 100_000_000
@@ -206,11 +209,28 @@ class Coin:
 
     @classmethod
     def pay_to_address_script(cls, address):
-        '''Return a pubkey script that pays to a pubkey hash.
+        '''Return a pubkey script that pays to an address.
 
-        Pass the address (either P2PKH or P2SH) in base58 form.
+        Supports:
+        - P2PKH and P2SH addresses in base58 form
+        - P2WPKH and P2WSH addresses in bech32 form (SegWit v0)
+        - P2TR addresses in bech32m form (Taproot, SegWit v1)
         '''
-        raw = cls.DECODE_CHECK(address)
+        # Try bech32/bech32m first if the coin supports it
+        if cls.BECH32_HRP is not None:
+            try:
+                hrp, witness_version, witness_program = Bech32.decode(address)
+                if hrp != cls.BECH32_HRP:
+                    raise CoinError(f'invalid address HRP: expected {cls.BECH32_HRP}, got {hrp}')
+                return ScriptPubKey.witness_program_script(witness_version, witness_program)
+            except Bech32Error:
+                pass  # Not a valid bech32 address, try base58
+
+        # Try base58
+        try:
+            raw = cls.DECODE_CHECK(address)
+        except Exception:
+            raise CoinError(f'invalid address: {address}')
 
         # Require version byte(s) plus hash160.
         verbyte = -1
@@ -297,6 +317,7 @@ class BitcoinMixin:
     XPUB_VERBYTES = bytes.fromhex("0488b21e")
     XPRV_VERBYTES = bytes.fromhex("0488ade4")
     RPC_PORT = 8332
+    BECH32_HRP = "bc"
 
 
 class Bitcoin(BitcoinMixin, Coin):
@@ -373,6 +394,7 @@ class BitcoinTestnetMixin:
     GENESIS_HASH = ('000000000933ea01ad0ee984209779ba'
                     'aec3ced90fa3f408719526f8d77f4943')
     REORG_LIMIT = 8000
+    BECH32_HRP = "tb"
     TX_COUNT = 12242438
     TX_COUNT_HEIGHT = 1035428
     TX_PER_BLOCK = 21
@@ -1038,6 +1060,7 @@ class Litecoin(Coin):
     TX_COUNT_HEIGHT = 1105256
     TX_PER_BLOCK = 10
     RPC_PORT = 9332
+    BECH32_HRP = "ltc"
     REORG_LIMIT = 800
     PEERS = [
         'ex.lug.gs s444',
@@ -1065,6 +1088,7 @@ class LitecoinTestnet(Litecoin):
     RPC_PORT = 19332
     REORG_LIMIT = 4000
     PEER_DEFAULT_PORTS = {'t': '51001', 's': '51002'}
+    BECH32_HRP = "tltc"
     PEERS = [
         'electrum-ltc.bysh.me s t',
         'electrum.ltc.xurious.com s t',
